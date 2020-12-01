@@ -4,6 +4,7 @@ module.exports = {
   testPathIgnorePatterns: [
     "\./src/",
     "\./out/",
-    "\./build/"
+    "\./build/",
+    "\./dist/"
   ]
 };
