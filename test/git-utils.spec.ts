@@ -3,7 +3,7 @@ import { getStagedFiles } from '../src/git-utils';
 jest.mock('simple-git');
 const mockGit = jest.requireMock('simple-git');
 
-describe('Getting staged files', () => {
+describe('When getting staged files', () => {
     describe('and no files to commit', () => {
         beforeAll(() => {
             mockGit.diff.mockImplementation(() => Promise.resolve(''));
