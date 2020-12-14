@@ -1,18 +1,41 @@
-import SimpleGit from 'simple-git';
+import { performOsTask } from './console-operations';
 
-export const getStagedFiles = async ():Promise<string[]> => {
-    const git = SimpleGit();
+const gitErrorCallback = async (result: string) => {
+    const errorMessage = result.split('\n')
+        .map((str) => str.trim())
+        .filter((str) => str.length > 0)[0];
+    // throw Error(errorMessage);
+    return errorMessage;
+};
+
+export const getStagedFiles = async (workingDir: string = ''): Promise<string[]> => {
+    const spawnOptions = workingDir.length === 0 ? undefined : { 'cwd': workingDir };
 
     let against = '';
-    try {
-        against = await git.revparse(['--verify', 'HEAD']);
-    } catch (e) { // GitError if no revisions
-    }
+    await performOsTask('git', ['rev-parse', '--verify', 'HEAD'], 'Git: rev-parse', spawnOptions,
+        async (result: string) => {
+            against = result.split('\n')
+                .map((str) => str.trim())
+                .filter((str) => str.length > 0)
+                .pop() || '';
+            return against;
+        },
+        gitErrorCallback);
 
     const diffParams = ['--cached', '--name-only', '--diff-filter=AM'];
     if (against) {
         diffParams.push(against);
     }
 
-    return (await git.diff(diffParams)).split('\n').filter((fn) => fn.length > 0);
+    let files: string[] = [];
+    await performOsTask('git', ['diff', ...diffParams], 'Git: diff', spawnOptions,
+        async (result: string) => {
+            files = result.split('\n')
+                .map((str) => str.trim())
+                .filter((str) => str.length > 0);
+            return files.length.toString();
+        },
+        gitErrorCallback);
+
+    return files;
 };
