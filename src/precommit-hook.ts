@@ -1,5 +1,5 @@
 import E1cDispatcher, { DumpedFileInfo } from './E1cDispatcher';
-import { getStagedFiles, stageFolder } from './git-utils';
+import { getStagedFiles, stageDir } from './git-utils';
 
 export const getStagedFilesToProcess = async (filesExtensions: string[], pathToDistDir?: string): Promise<string[]> => (await getStagedFiles())
     .filter((filepath) => filesExtensions.map((s) => `.${s}`).indexOf(filepath.slice(-4)) >= 0)
@@ -15,5 +15,5 @@ export const processStagedFiles = async (e1cDispatcher?: E1cDispatcher): Promise
 export const precommitHook = async () => {
     const dispatcher = await E1cDispatcher.initWithLocalConfig();
     const dumpedFilesInfo = await processStagedFiles(dispatcher);
-    Promise.all(dumpedFilesInfo.map((dumpedFileInfo) => stageFolder(dumpedFileInfo.pathToSrcFiles)));
+    Promise.all(dumpedFilesInfo.map((dumpedFileInfo) => stageDir(dumpedFileInfo.pathToSrcFiles)));
 };

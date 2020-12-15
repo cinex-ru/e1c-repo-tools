@@ -110,21 +110,21 @@ describe('When dumping external bin file', () => {
     test('should run 1cv8 executable with given config', async () => {
         const pathToBinFile = 'path/to/bin/file';
         const e1cDispatcher = await E1cDispatcher.initWithLocalConfig();
-        e1cDispatcher.DumpExternalBinFile(pathToBinFile);
+        await e1cDispatcher.DumpExternalBinFile(pathToBinFile);
         const basename = path.basename(pathToBinFile);
         const basenameWithoutExt = basename.indexOf('.') < 0 ? basename : basename.split('.').filter((str) => str.length > 0).slice(0, -1).join('.');
         const absolutePathRoSrcFiles = path.join(path.resolve(e1cDispatcher.pathToSrcDir), basename, basenameWithoutExt);
         const absolutePathToBinFile = path.resolve(pathToBinFile);
 
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][0]).toBe(e1cDispatcher.pathToExecutable);
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][0]).toBe('DESIGNER');
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][1]).toBe('/DumpExternalDataProcessorOrReportToFiles');
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][2]).toBe(absolutePathRoSrcFiles);
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][3]).toBe(absolutePathToBinFile);
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][4]).toBe('-Format');
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][5]).toBe('Hierarchical');
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][6]).toBe('/Out');
-        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][7]).toMatch(
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][0]).toBe(e1cDispatcher.pathToExecutable);
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][0]).toBe('DESIGNER');
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][1]).toBe('/DumpExternalDataProcessorOrReportToFiles');
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][2]).toBe(absolutePathRoSrcFiles);
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][3]).toBe(absolutePathToBinFile);
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][4]).toBe('-Format');
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][5]).toBe('Hierarchical');
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][6]).toBe('/Out');
+        expect(mockConsoleOperations.performOsTask.mock.calls[1][1][7]).toMatch(
             new RegExp(`${path.join(e1cDispatcher.pathToLogsDir, path.sep)
                 .split(path.sep).join(`\\${path.sep}`)}\\d+_\\d+_${basename}\\.log`),
         );

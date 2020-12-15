@@ -2,7 +2,8 @@ import path from 'path';
 import { promises as fs, existsSync } from 'fs';
 import { TextDecoder } from 'util';
 import { performOsTask } from './console-operations';
-import { dateToLogString } from './utils';
+import { dateToLogString, removeDir } from './utils';
+import { checkDirStatus, revParse } from './git-utils';
 
 interface E1cRepoConfig {
     pathToExecutable: string,
@@ -56,8 +57,18 @@ export default class E1cDispatcher {
         const pathToSrcFiles = path.join(path.resolve(this.pathToSrcDir), basename);
         const pathToLogFile = path.join(this.pathToLogsDir, `${dateToLogString(new Date())}_${basename}.log`);
 
-        if (!existsSync(path.resolve(this.pathToSrcDir))) {
-            await fs.mkdir(path.resolve(this.pathToSrcDir));
+        if (existsSync(path.resolve(pathToSrcFiles))) {
+            const changes = await checkDirStatus(pathToSrcFiles);
+            if (changes.length > 0) {
+                const hash = await revParse();
+                const backUpName = `${pathToSrcFiles}.${hash.length > 0 ? `${hash.slice(0, 8)}.` : ''}bak`;
+                await fs.rename(pathToSrcFiles, backUpName);
+            }
+            await removeDir(pathToSrcFiles);
+        }
+
+        if (!existsSync(path.resolve(this.pathToLogsDir))) {
+            await fs.mkdir(path.resolve(this.pathToLogsDir));
         }
 
         await performOsTask(this.pathToExecutable, [
