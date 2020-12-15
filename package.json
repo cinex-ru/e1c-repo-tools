@@ -33,12 +33,14 @@
         "e1c-precommit-hook": "./dist/hook.js"
     },
     "scripts": {
+        "prepublishOnly": "yarn build",
         "cmz": "cz",
         "release": "standard-version",
-        "prestart": "tsc",
+        "start": "ts-node-dev",
         "build": "tsc -p ./src",
-        "lint": "eslint ./src/**/*.ts",
-        "test": "jest --passWithNoTests"
+        "lint": "eslint --no-error-on-unmatched-pattern ./src/**/*.ts",
+        "test": "jest --passWithNoTests",
+        "debug": "tsc --sourceMap && node --inspect=9227"
     },
     "dependencies": {
         "chalk": "^4.1.0",
