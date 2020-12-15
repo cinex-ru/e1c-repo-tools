@@ -1,10 +1,11 @@
+import path from 'path';
+import { cwd } from 'process';
 import { performOsTask } from './console-operations';
 
 const gitErrorCallback = async (result: string) => {
     const errorMessage = result.split('\n')
         .map((str) => str.trim())
         .filter((str) => str.length > 0)[0];
-    // throw Error(errorMessage);
     return errorMessage;
 };
 
@@ -50,17 +51,19 @@ export const getStagedFiles = async (workDir: string = ''): Promise<string[]> =>
 
 export const stageDir = async (pathToDir: string, workDir: string = '') => {
     const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
+    const relPathToDir = path.relative(workDir.length === 0 ? cwd() : workDir, pathToDir);
 
-    await performOsTask('git', ['add', pathToDir], 'Git: add new files', spawnOptions,
+    await performOsTask('git', ['add', pathToDir], `Git: add new files '${relPathToDir}'`, spawnOptions,
         undefined,
         gitErrorCallback);
 };
 
-export const checkDirStatus = async (pathToDir: string, workDir: string = ''): Promise<string[]> => {
+export const getDirStatus = async (pathToDir: string, workDir: string = ''): Promise<string[]> => {
     const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
+    const relPathToDir = path.relative(workDir.length === 0 ? cwd() : workDir, pathToDir);
 
     let files: string[] = [];
-    await performOsTask('git', ['status', '--porcelain', '-uall', pathToDir], 'Git: status', spawnOptions,
+    await performOsTask('git', ['status', '--porcelain', '-uall', pathToDir], `Git: status '${relPathToDir}'`, spawnOptions,
         async (result: string) => {
             files = result.split('\n')
                 .map((str) => str.trim())
