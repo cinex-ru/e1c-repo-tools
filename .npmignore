@@ -1,0 +1,14 @@
+node_modules/
+coverage/
+tmp/
+.vscode/
+TODO
+
+src/
+test/
+
+.editorconfig
+.eslintrc.json
+.versionrc
+jest.config.js
+tsconfig.json
