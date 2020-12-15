@@ -3,25 +3,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.performOsTask = exports.stopLogUpdate = exports.startLogUpdate = exports.sleep = exports.textDecoder = void 0;
+exports.performOsTask = exports.stopLogUpdate = exports.startLogUpdate = exports.getLogUpdateStatus = exports.setLogUpdateStatus = exports.sleep = void 0;
 const util_1 = require("util");
 const log_update_1 = __importDefault(require("log-update"));
 const log_symbols_1 = __importDefault(require("log-symbols"));
 const chalk_1 = __importDefault(require("chalk"));
 const child_process_1 = __importDefault(require("child_process"));
-exports.textDecoder = new util_1.TextDecoder();
 const sleep = (ms) => new Promise((resolve) => {
     setTimeout(resolve, ms);
 });
 exports.sleep = sleep;
+const textDecoder = new util_1.TextDecoder();
 let logUpdateActive = false;
+let logUpdateStatus = false;
+const setLogUpdateStatus = (flag) => {
+    logUpdateStatus = flag;
+};
+exports.setLogUpdateStatus = setLogUpdateStatus;
+const getLogUpdateStatus = () => logUpdateStatus;
+exports.getLogUpdateStatus = getLogUpdateStatus;
 const startLogUpdate = async (operationTitle) => {
     logUpdateActive = true;
     const frames = ['-', '\\', '|', '/'];
     let i = 0;
     while (logUpdateActive) {
         const frame = frames[i = (i + 1) % frames.length];
-        log_update_1.default(`${operationTitle} ${frame}`);
+        if (exports.getLogUpdateStatus()) {
+            log_update_1.default(`${operationTitle} ${frame}`);
+        }
         // eslint-disable-next-line no-await-in-loop
         await exports.sleep(50);
     }
@@ -60,7 +69,7 @@ onSuccess, onError) => {
             return;
         }
         let additionalData;
-        const resultString = exports.textDecoder.decode(new Uint8Array(chunks.flatMap((buffer) => [...buffer])));
+        const resultString = textDecoder.decode(new Uint8Array(chunks.flatMap((buffer) => [...buffer])));
         if (onSuccess) {
             additionalData = await onSuccess(resultString);
         }
@@ -79,7 +88,7 @@ onSuccess, onError) => {
         let additionalData;
         // git pull print to stderr
         // TODO: filter stderr output
-        const errorMessage = exports.textDecoder.decode(data);
+        const errorMessage = textDecoder.decode(data);
         if (!onError) {
             exports.stopLogUpdate(taskTitle, false, errorMessage);
             throw Error(errorMessage);

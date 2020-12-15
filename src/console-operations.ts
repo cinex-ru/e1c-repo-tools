@@ -4,13 +4,23 @@ import logSymbols from 'log-symbols';
 import chalk from 'chalk';
 import childProcess from 'child_process';
 
-export const textDecoder = new TextDecoder();
-
 export const sleep = (ms: number) => new Promise((resolve) => {
     setTimeout(resolve, ms);
 });
 
+const textDecoder = new TextDecoder();
 let logUpdateActive = false;
+let logUpdateIsOn = false;
+
+export const switchLogUpdateOn = () => {
+    logUpdateIsOn = true;
+};
+
+export const switchLogUpdateOff = () => {
+    logUpdateIsOn = false;
+};
+
+export const getLogUpdateStatus = (): boolean => logUpdateIsOn;
 
 export const startLogUpdate = async (operationTitle: string) => {
     logUpdateActive = true;
@@ -18,7 +28,9 @@ export const startLogUpdate = async (operationTitle: string) => {
     let i = 0;
     while (logUpdateActive) {
         const frame = frames[i = (i + 1) % frames.length];
-        logUpdate(`${operationTitle} ${frame}`);
+        if (getLogUpdateStatus()) {
+            logUpdate(`${operationTitle} ${frame}`);
+        }
         // eslint-disable-next-line no-await-in-loop
         await sleep(50);
     }
