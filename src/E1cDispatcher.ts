@@ -1,4 +1,8 @@
-import { promises as fs } from 'fs';
+import path from 'path';
+import { promises as fs, existsSync } from 'fs';
+import { TextDecoder } from 'util';
+import { performOsTask } from './console-operations';
+import { dateToLogString } from './utils';
 
 interface E1cRepoConfig {
     pathToExecutable: string,
@@ -6,6 +10,11 @@ interface E1cRepoConfig {
     pathToDistDir?: string,
     filesExtensions?: string[],
     pathToLogsDir?: string
+}
+
+export interface DumpedFileInfo {
+    pathToBinFile: string,
+    pathToSrcFiles: string
 }
 
 const getE1cRepoConfig = async (): Promise<E1cRepoConfig> => {
@@ -16,11 +25,10 @@ const getE1cRepoConfig = async (): Promise<E1cRepoConfig> => {
         return pjson.e1cRepoConfig;
     }
     throw new Error('Repo config not found in "package.json"');
-    // return undefined;
 };
 
 export default class E1cDispatcher {
-    readonly pathToExecutable: string | undefined;
+    readonly pathToExecutable: string;
     readonly pathToSrcDir: string;
     readonly pathToDistDir: string;
     readonly filesExtensions: string[];
@@ -40,5 +48,38 @@ export default class E1cDispatcher {
         this.pathToDistDir = e1cRepoConfig.pathToDistDir || './dist';
         this.filesExtensions = [...e1cRepoConfig.filesExtensions! || ['erf', 'epf']];
         this.pathToLogsDir = e1cRepoConfig.pathToLogsDir || './logs';
+    }
+
+    async DumpExternalBinFile(pathToBinFile: string): Promise<DumpedFileInfo> {
+        const basename = path.basename(pathToBinFile);
+        const basenameWithoutExt = basename.indexOf('.') < 0 ? basename : basename.split('.').filter((str) => str.length > 0).slice(0, -1).join('.');
+        const pathToSrcFiles = path.join(path.resolve(this.pathToSrcDir), basename);
+        const pathToLogFile = path.join(this.pathToLogsDir, `${dateToLogString(new Date())}_${basename}.log`);
+
+        if (!existsSync(path.resolve(this.pathToSrcDir))) {
+            await fs.mkdir(path.resolve(this.pathToSrcDir));
+        }
+
+        await performOsTask(this.pathToExecutable, [
+            'DESIGNER',
+            '/DumpExternalDataProcessorOrReportToFiles',
+            path.join(pathToSrcFiles, basenameWithoutExt),
+            path.resolve(pathToBinFile),
+            '-Format', 'Hierarchical',
+            '/Out', pathToLogFile,
+        ], `Dumping ${pathToBinFile}`, undefined,
+        async () => {
+            const regexp = /Выгрузка завершена[^\d]+(?<time>\d+)/gmiu;
+            const textDecoder = new TextDecoder('windows-1251');
+            const logText = textDecoder.decode(await fs.readFile(pathToLogFile));
+            const match = regexp.exec(logText);
+            if (match && match.groups) {
+                return `${match.groups.time}ms`;
+            }
+
+            return Error('fail');
+        });
+
+        return { pathToBinFile, pathToSrcFiles };
     }
 }

@@ -29,11 +29,14 @@
             "pre-commit": "yarn lint && yarn test"
         }
     },
+    "bin": {
+        "e1c-precommit-hook": "./dist/hook.js"
+    },
     "scripts": {
         "cmz": "cz",
-        "release": "standart-version",
+        "release": "standard-version",
         "prestart": "tsc",
-        "build": "tsc --build",
+        "build": "tsc -p ./src",
         "lint": "eslint ./src/**/*.ts",
         "test": "jest --passWithNoTests"
     },

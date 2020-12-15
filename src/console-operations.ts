@@ -44,7 +44,7 @@ export const stopLogUpdate = (operationTitle: string, isSuccessful: boolean, add
 
 export const performOsTask = async (command: string, args: string[], taskTitle: string, options?: childProcess.SpawnOptionsWithoutStdio,
     // eslint-disable-next-line no-unused-vars
-    onSuccess?: (result: string) => Promise<string | undefined>, onError?: (result: string) => Promise<string | undefined>) => {
+    onSuccess?: (result: string) => Promise<string | Error | undefined>, onError?: (result: string) => Promise<string | undefined>) => {
     const osTask = childProcess.spawn(command, args, options);
     const chunks: Buffer[] = [];
 
@@ -57,12 +57,17 @@ export const performOsTask = async (command: string, args: string[], taskTitle: 
             return;
         }
 
-        let additionalData: string | undefined;
+        let additionalData: string | Error | undefined;
         const resultString = textDecoder.decode(new Uint8Array(chunks.flatMap((buffer) => [...buffer])));
         if (onSuccess) {
             additionalData = await onSuccess(resultString);
         }
-        stopLogUpdate(taskTitle, true, additionalData);
+        if (additionalData instanceof Error) {
+            stopLogUpdate(taskTitle, false, additionalData.message);
+            throw additionalData;
+        } else {
+            stopLogUpdate(taskTitle, true, additionalData);
+        }
     });
 
     osTask.stderr.on('data', async (data) => {

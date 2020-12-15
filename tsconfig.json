@@ -73,11 +73,14 @@
         /* Skip type checking of declaration files. */
         "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */
     },
-    "include": [
-        "./src/**/*.ts",
-        "./test/**/*.ts"
-    ],
+    // "files": [
+    //     "./src/hook.ts"
+    // ],
+    // "include": [
+    //     "./src/**/*.ts",
+    //     "./test/**/*.ts"
+    // ],
     "exclude": [
-        "node_modules"
+        "node_modules",
     ]
 }

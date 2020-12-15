@@ -1,12 +1,25 @@
-import { getStagedFilesToProcess } from '../src/precommit-hook';
+/* eslint-disable jest/no-disabled-tests */
+import { getStagedFilesToProcess, processStagedFiles } from '../src/precommit-hook';
+import E1cDispatcher from '../src/E1cDispatcher';
 
-jest.mock('simple-git');
-const mockGit = jest.requireMock('simple-git');
+jest.mock('fs');
+const mockFs = jest.requireMock('fs');
+
+const mockDumpExternalBinFile = jest.fn();
+
+const { initWithLocalConfig } = E1cDispatcher;
+jest.spyOn(E1cDispatcher, 'initWithLocalConfig').mockImplementation(async () => {
+    const instance = await initWithLocalConfig();
+    jest.spyOn(instance, 'DumpExternalBinFile').mockImplementation(mockDumpExternalBinFile);
+    return instance;
+});
+
+const mockGetStagedFiles = jest.spyOn(jest.requireActual('../src/git-utils.ts'), 'getStagedFiles');
 
 describe('When getting staged files', () => {
     describe('and there are files to commit', () => {
         beforeAll(() => {
-            mockGit.diff.mockImplementation(() => Promise.resolve('file1.txt\nfile2.erf\nfile3.exe\n'));
+            mockGetStagedFiles.mockImplementation(() => Promise.resolve(['file1.txt', 'file2.erf', 'file3.exe']));
         });
 
         it('gets filtered array of files names', async () => {
@@ -18,8 +31,8 @@ describe('When getting staged files', () => {
             ['good/path'],
         ])('and path to dist dir defined', (goodPath) => {
             beforeAll(() => {
-                mockGit.diff.mockImplementation(() => Promise
-                    .resolve('file1.txt\ngood/path/file2.erf\nbad/path/file3.exe\ngood/path/smth/file4.exe\n'));
+                mockGetStagedFiles.mockImplementation(() => Promise
+                    .resolve(['file1.txt', 'good/path/file2.erf', 'bad/path/file3.exe', 'good/path/smth/file4.exe']));
             });
 
             it(`gets filtered array of files names for path ${goodPath}`, async () => {
@@ -29,6 +42,22 @@ describe('When getting staged files', () => {
     });
 });
 
+describe('When processing staged files', () => {
+    beforeAll(() => {
+        mockGetStagedFiles.mockImplementation(() => Promise.resolve(['file1.txt', 'path/to/dist/file2.erf', 'path/to/dist/smth/file3.epf']));
+        mockFs.readFile.mockImplementation(() => Promise.resolve(`{ "e1cRepoConfig": {
+            "pathToExecutable": "some/path",
+            "pathToDistDir": "path/to/dist"
+        } }`));
+    });
+
+    describe('and got dispatcher', () => {
+        it('dumps bin files', async () => {
+            const e1cDispatcher = await E1cDispatcher.initWithLocalConfig();
+            await processStagedFiles(e1cDispatcher);
+
+            expect(mockDumpExternalBinFile.mock.calls[0][0]).toBe('path/to/dist/file2.erf');
+            expect(mockDumpExternalBinFile.mock.calls[1][0]).toBe('path/to/dist/smth/file3.epf');
         });
     });
 });

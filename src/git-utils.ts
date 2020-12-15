@@ -39,3 +39,11 @@ export const getStagedFiles = async (workingDir: string = ''): Promise<string[]>
 
     return files;
 };
+
+export const stageFolder = async (pathToFolder: string, workingDir: string = '') => {
+    const spawnOptions = workingDir.length === 0 ? undefined : { 'cwd': workingDir };
+
+    await performOsTask('git', ['add', pathToFolder], 'Git: add new files', spawnOptions,
+        undefined,
+        gitErrorCallback);
+};

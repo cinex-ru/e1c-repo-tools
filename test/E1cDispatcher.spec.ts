@@ -1,7 +1,12 @@
+import path from 'path';
 import E1cDispatcher from '../src/E1cDispatcher';
 
 jest.mock('fs');
 const mockFs = jest.requireMock('fs');
+mockFs.existsSync = jest.fn().mockImplementation(() => true);
+
+jest.mock('../src/console-operations.ts');
+const mockConsoleOperations = jest.requireMock('../src/console-operations.ts');
 
 describe('When init dispatcher with config', () => {
     describe('and config defined with all fields', () => {
@@ -31,8 +36,8 @@ describe('When init dispatcher with config', () => {
     });
 
     describe('and config defined with path to executable only', () => {
-        beforeAll(() => {
-            mockFs.readFile.mockImplementation(() => Promise.resolve('{ "e1cRepoConfig": { "pathToExecutable": "some/path" } }'));
+        beforeEach(() => {
+            mockFs.readFile.mockImplementationOnce(() => Promise.resolve('{ "e1cRepoConfig": { "pathToExecutable": "some/path" } }'));
         });
 
         it('inits ok', async () => {
@@ -61,8 +66,8 @@ describe('When init dispatcher with config', () => {
     });
 
     describe('and config defined without path to executable', () => {
-        beforeAll(() => {
-            mockFs.readFile.mockImplementation(() => Promise.resolve('{ "e1cRepoConfig": {} }'));
+        beforeEach(() => {
+            mockFs.readFile.mockImplementationOnce(() => Promise.resolve('{ "e1cRepoConfig": {} }'));
         });
 
         it('throws an error', async () => {
@@ -79,8 +84,8 @@ describe('When init dispatcher with config', () => {
     });
 
     describe('and config not defined', () => {
-        beforeAll(() => {
-            mockFs.readFile.mockImplementation(() => Promise.resolve('{}'));
+        beforeEach(() => {
+            mockFs.readFile.mockImplementationOnce(() => Promise.resolve('{}'));
         });
 
         it('throws an error', async () => {
@@ -94,5 +99,45 @@ describe('When init dispatcher with config', () => {
                 );
             }
         });
+    });
+});
+
+describe('When dumping external bin file', () => {
+    beforeAll(async () => {
+        mockConsoleOperations.performOsTask.mockImplementation(jest.fn());
+    });
+
+    test('should run 1cv8 executable with given config', async () => {
+        const pathToBinFile = 'path/to/bin/file';
+        const e1cDispatcher = await E1cDispatcher.initWithLocalConfig();
+        e1cDispatcher.DumpExternalBinFile(pathToBinFile);
+        const basename = path.basename(pathToBinFile);
+        const basenameWithoutExt = basename.indexOf('.') < 0 ? basename : basename.split('.').filter((str) => str.length > 0).slice(0, -1).join('.');
+        const absolutePathRoSrcFiles = path.join(path.resolve(e1cDispatcher.pathToSrcDir), basename, basenameWithoutExt);
+        const absolutePathToBinFile = path.resolve(pathToBinFile);
+
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][0]).toBe(e1cDispatcher.pathToExecutable);
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][0]).toBe('DESIGNER');
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][1]).toBe('/DumpExternalDataProcessorOrReportToFiles');
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][2]).toBe(absolutePathRoSrcFiles);
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][3]).toBe(absolutePathToBinFile);
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][4]).toBe('-Format');
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][5]).toBe('Hierarchical');
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][6]).toBe('/Out');
+        expect(mockConsoleOperations.performOsTask.mock.calls[0][1][7]).toMatch(
+            new RegExp(`${path.join(e1cDispatcher.pathToLogsDir, path.sep)
+                .split(path.sep).join(`\\${path.sep}`)}\\d+_\\d+_${basename}\\.log`),
+        );
+    });
+
+    test('should return path to bin file and path to source files', async () => {
+        const pathToBinFile = 'path/to/bin/file';
+        const e1cDispatcher = await E1cDispatcher.initWithLocalConfig();
+        const result = await e1cDispatcher.DumpExternalBinFile(pathToBinFile);
+        const basename = path.basename(pathToBinFile);
+        const absolutePathRoSrcFiles = path.join(path.resolve(e1cDispatcher.pathToSrcDir), basename);
+
+        expect(result.pathToBinFile).toBe(pathToBinFile);
+        expect(result.pathToSrcFiles).toBe(absolutePathRoSrcFiles);
     });
 });

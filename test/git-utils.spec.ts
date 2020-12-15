@@ -7,8 +7,7 @@ import { createTempDir, removeDir } from '../src/utils';
 
 const filenames = ['file1.txt', 'file2.erf'];
 
-// eslint-disable-next-line jest/no-disabled-tests
-describe('When getting staged files', () => {
+describe.skip('When getting staged files', () => {
     describe('and directory not initialized', () => {
         test('should return empty array', async () => {
             const tempDir = await createTempDir();
