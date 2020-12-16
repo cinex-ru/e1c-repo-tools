@@ -3,3 +3,4 @@ coverage/
 tmp/
 dist/
 TODO
+yarn-error.log
