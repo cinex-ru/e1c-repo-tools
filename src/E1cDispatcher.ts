@@ -1,7 +1,8 @@
 import path from 'path';
 import { promises as fs, existsSync } from 'fs';
 import { TextDecoder } from 'util';
-import { performOsTask } from './console-operations';
+import { cwd } from 'process';
+import { performOsTask, error as logError } from './console-operations';
 import { dateToLogString, removeDir } from './utils';
 import { getDirStatus, revParse } from './git-utils';
 
@@ -26,6 +27,31 @@ const getE1cRepoConfig = async (): Promise<E1cRepoConfig> => {
         return pjson.e1cRepoConfig;
     }
     throw new Error('Repo config not found in "package.json"');
+};
+
+type ExternalBinFileType = 'ExternalReport' | 'ExternalDataProcessor';
+interface ExternalBinFileTypeInfo {
+    name: string,
+    extension: string
+}
+// eslint-disable-next-line no-unused-vars
+type ExternalBinFileTypesInfo = { [K in ExternalBinFileType]: ExternalBinFileTypeInfo };
+const externalBinFileTypesInfo: ExternalBinFileTypesInfo = {
+    'ExternalReport': { 'name': 'ExternalReport', 'extension': 'epf' },
+    'ExternalDataProcessor': { 'name': 'ExternalDataProcessor', 'extension': 'epf' },
+};
+
+const getTypeInfoOfDumpedBinFile = async (pathToRootSrcFile: string): Promise<ExternalBinFileTypeInfo | undefined> => {
+    const rootSrcFileData = await fs.readFile(pathToRootSrcFile, { 'encoding': 'utf8' });
+
+    const entries = Object.entries(externalBinFileTypesInfo);
+    for (let i = 0; i < entries.length; i += 1) {
+        if (rootSrcFileData.indexOf(entries[i][1].name) >= 0) {
+            return entries[i][1];
+        }
+    }
+
+    return undefined;
 };
 
 export default class E1cDispatcher {
@@ -70,8 +96,9 @@ export default class E1cDispatcher {
                     newBackupName = `${backUpName}${index}`;
                 }
                 await fs.rename(pathToSrcFiles, newBackupName);
+            } else {
+                await removeDir(pathToSrcFiles);
             }
-            await removeDir(pathToSrcFiles);
         }
 
         if (!existsSync(path.resolve(this.pathToLogsDir))) {
@@ -88,6 +115,63 @@ export default class E1cDispatcher {
         ], `Dumping ${pathToBinFile}`, undefined,
         async () => {
             const regexp = /Выгрузка завершена[^\d]+(?<time>\d+)/gmiu;
+            const textDecoder = new TextDecoder('windows-1251');
+            const logText = textDecoder.decode(await fs.readFile(pathToLogFile));
+            const match = regexp.exec(logText);
+            if (match && match.groups) {
+                return `${match.groups.time}ms`;
+            }
+
+            return Error('fail');
+        });
+
+        return { pathToBinFile, pathToSrcFiles };
+    }
+
+    async BuildExternalBinFile(pathToRootSrcFile: string): Promise<DumpedFileInfo> {
+        const basename = path.basename(pathToRootSrcFile);
+        const basenameWithoutExt = basename.indexOf('.') < 0 ? basename : basename.split('.').filter((str) => str.length > 0).slice(0, -1).join('.');
+        const pathToSrcFiles = path.dirname(pathToRootSrcFile);
+        const pathToLogFile = path.join(this.pathToLogsDir, `${dateToLogString(new Date())}_${basename}.log`);
+
+        const fileTypeInfo = await getTypeInfoOfDumpedBinFile(pathToRootSrcFile);
+        if (!fileTypeInfo) {
+            logError('Unknown file type', path.relative(cwd(), pathToRootSrcFile));
+            return { 'pathToBinFile': '', pathToSrcFiles };
+        }
+
+        const pathToBinFile = path.join(this.pathToDistDir, `${basenameWithoutExt}.${fileTypeInfo.extension}`);
+
+        // TODO: code duplication with DumpExternalBinFile()
+        if (existsSync(path.resolve(pathToBinFile))) {
+            const changes = await getDirStatus(pathToBinFile);
+            if (changes.length > 0) {
+                const hash = await revParse();
+                const backUpName = `${pathToBinFile}.${hash.length > 0 ? `${hash.slice(0, 8)}.` : ''}bak`;
+
+                let newBackupName = backUpName;
+                let index = 0;
+                while (existsSync(newBackupName)) {
+                    index += 1;
+                    newBackupName = `${backUpName}${index}`;
+                }
+                await fs.rename(pathToBinFile, newBackupName);
+            }
+        }
+
+        if (!existsSync(path.resolve(this.pathToLogsDir))) {
+            await fs.mkdir(path.resolve(this.pathToLogsDir));
+        }
+
+        await performOsTask(this.pathToExecutable, [
+            'DESIGNER',
+            '/LoadExternalDataProcessorOrReportFromFiles',
+            pathToRootSrcFile,
+            path.resolve(pathToBinFile),
+            '/Out', pathToLogFile,
+        ], `Building ${path.relative(cwd(), pathToSrcFiles)}`, undefined,
+        async () => {
+            const regexp = /Загрузка завершена[^\d]+(?<time>\d+)/gmiu;
             const textDecoder = new TextDecoder('windows-1251');
             const logText = textDecoder.decode(await fs.readFile(pathToLogFile));
             const match = regexp.exec(logText);
