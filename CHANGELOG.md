@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [0.2.0](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.1.1...v0.2.0) (2020-12-16)
 
-### [0.1.1](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.1.0...v0.1.1) (2020-12-16)
-
 
 ### Features
 
