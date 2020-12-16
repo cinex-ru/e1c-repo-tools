@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.1.0...v0.1.1) (2020-12-16)
+
+
+### Features
+
+* **build:** add build command ([c00fba3](https://github.com/cinex-ru/e1c-repo-tools/commit/c00fba37b67966fbc2e1886e8388ff06ed38dacf))
+* **dump:** add dump changed files command ([5dfefdf](https://github.com/cinex-ru/e1c-repo-tools/commit/5dfefdfc6cf03eed801af9617dfbf899c1c7d5dd))
+* **precommit-hook:** add on/off status for log-update, and turn off for precommit-hook ([6f10c67](https://github.com/cinex-ru/e1c-repo-tools/commit/6f10c67e42e9ed3d8e3bd69cdecc3b12ad0b400b))
+* **precommit-hook:** clean src dir and if there was changes create backup ([53850b5](https://github.com/cinex-ru/e1c-repo-tools/commit/53850b5af48eebe02d4afbc9a87cd17c6d718946))
+
+
+### Bug Fixes
+
+* **precommit-hook:** fix parallel dumping error and multiple file dumps only last ([161a3e4](https://github.com/cinex-ru/e1c-repo-tools/commit/161a3e4cc2bdddafe95628d9a06afc92b30d5fb5))
+
+
+### Build System
+
+* remove dist files from git index ([24dee0a](https://github.com/cinex-ru/e1c-repo-tools/commit/24dee0a8d00ff842f03a7d49e29a2fd259995f5d))
+
+
+### Code Refactoring
+
+* **logger:** refactor logging system ([d6abb44](https://github.com/cinex-ru/e1c-repo-tools/commit/d6abb444e416c2248d3398befc5443ac27300227))
+
+
+### Others
+
+* add yarn-error.log to .gitignore ([3c68b12](https://github.com/cinex-ru/e1c-repo-tools/commit/3c68b1228b9d99d2f0b15eef1646746fe4dd5ef4))
+* **build:** add build command to package.json ([b64dfc2](https://github.com/cinex-ru/e1c-repo-tools/commit/b64dfc207f0107b017a91a38c31d3c895ae737cb))
+* add repository and keywords ([60a5dd8](https://github.com/cinex-ru/e1c-repo-tools/commit/60a5dd8a536681617a5014004af0ad5c398f99aa))
+* add some scripts and vscode launch ([5281f80](https://github.com/cinex-ru/e1c-repo-tools/commit/5281f80e8d96211164519929cc886348c9ef4215))
+
+
+### Docs
+
+* add readme ([890a8cf](https://github.com/cinex-ru/e1c-repo-tools/commit/890a8cfd7dfaf2bb1b46970fd94634234af5609c))
+
 ## 0.1.0 (2020-12-15)
 
 
