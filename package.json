@@ -30,19 +30,34 @@
         }
     },
     "bin": {
-        "e1c-precommit-hook": "./dist/hook.js"
+        "e1c-precommit-hook": "./dist/hook.js",
+        "e1c-dump": "./dist/dump.js",
+        "e1c-build": "./dist/build.js"
     },
     "scripts": {
+        "prepublishOnly": "yarn build",
         "cmz": "cz",
         "release": "standard-version",
-        "prestart": "tsc",
+        "start": "ts-node-dev",
         "build": "tsc -p ./src",
-        "lint": "eslint ./src/**/*.ts",
-        "test": "jest --passWithNoTests"
+        "lint": "eslint --no-error-on-unmatched-pattern ./src/**/*.ts",
+        "test": "jest --passWithNoTests",
+        "debug": "tsc --sourceMap && node --inspect=9227"
     },
     "dependencies": {
         "chalk": "^4.1.0",
         "log-symbols": "^4.0.0",
         "log-update": "^4.0.0"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cinex-ru/e1c-repo-tools.git"
+    },
+    "keywords": [
+        "1C",
+        "1С",
+        "precommit-hook",
+        "e1c",
+        "repository-tools"
+    ]
 }

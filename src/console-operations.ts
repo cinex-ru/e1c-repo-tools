@@ -4,13 +4,38 @@ import logSymbols from 'log-symbols';
 import chalk from 'chalk';
 import childProcess from 'child_process';
 
-export const textDecoder = new TextDecoder();
-
 export const sleep = (ms: number) => new Promise((resolve) => {
     setTimeout(resolve, ms);
 });
 
+const textDecoder = new TextDecoder();
 let logUpdateActive = false;
+let logUpdateIsOn = false;
+
+export const switchLogUpdateOn = () => {
+    logUpdateIsOn = true;
+};
+
+export const switchLogUpdateOff = () => {
+    logUpdateIsOn = false;
+};
+
+type LogMessageType = 'Success' | 'Info' | 'Warning' | 'Error';
+interface LogMessageSettings {
+    prefix: string | undefined;
+    style: chalk.Chalk;
+}
+// eslint-disable-next-line no-unused-vars
+type LogMessagesConfig = { [K in LogMessageType]: LogMessageSettings };
+
+const logMessagesConfig: LogMessagesConfig = {
+    'Success': { 'prefix': logSymbols.success, 'style': chalk.green.bold },
+    'Info': { 'prefix': logSymbols.info, 'style': chalk.blueBright },
+    'Warning': { 'prefix': logSymbols.warning, 'style': chalk.yellow },
+    'Error': { 'prefix': logSymbols.error, 'style': chalk.red },
+};
+
+export const getLogUpdateStatus = (): boolean => logUpdateIsOn;
 
 export const startLogUpdate = async (operationTitle: string) => {
     logUpdateActive = true;
@@ -18,28 +43,62 @@ export const startLogUpdate = async (operationTitle: string) => {
     let i = 0;
     while (logUpdateActive) {
         const frame = frames[i = (i + 1) % frames.length];
-        logUpdate(`${operationTitle} ${frame}`);
+        if (getLogUpdateStatus()) {
+            logUpdate(`${operationTitle} ${frame}`);
+        }
         // eslint-disable-next-line no-await-in-loop
         await sleep(50);
     }
 };
 
-export const stopLogUpdate = (operationTitle: string, isSuccessful: boolean, additionalData?: string) => {
-    logUpdateActive = false;
+export const buildLogMessage = (operationTitle: string, messageType: LogMessageType, additionalData?: string) => {
     let addData = additionalData;
     if (!addData) {
-        if (isSuccessful) {
+        if (messageType === 'Success') {
             addData = 'ok';
-        } else {
-            addData = `[${chalk.red('fail')}]`;
+        } else if (messageType === 'Error') {
+            addData = 'fail';
         }
     }
-    if (isSuccessful) {
-        logUpdate(`${logSymbols.success} ${operationTitle} [${chalk.green.bold(addData)}]`);
-    } else {
-        logUpdate(`${logSymbols.error} ${operationTitle} ${chalk.red(addData)}`);
+    if (addData) {
+        if (messageType === 'Success' || messageType === 'Error') {
+            addData = ` [${logMessagesConfig[messageType].style(addData)}]`;
+        } else {
+            addData = ` ${logMessagesConfig[messageType].style(addData)}`;
+        }
     }
+
+    return `${logMessagesConfig[messageType].prefix} ${operationTitle} ${addData}`;
+};
+
+export const log = (operationTitle: string, messageType: LogMessageType, additionalData?: string) => {
+    logUpdate(buildLogMessage(operationTitle, messageType, additionalData));
     logUpdate.done();
+};
+
+export const success = (operationTitle: string, additionalData?: string) => {
+    logUpdate(buildLogMessage(operationTitle, 'Success', additionalData));
+    logUpdate.done();
+};
+
+export const error = (operationTitle: string, additionalData?: string) => {
+    logUpdate(buildLogMessage(operationTitle, 'Error', additionalData));
+    logUpdate.done();
+};
+
+export const warn = (operationTitle: string, additionalData?: string) => {
+    logUpdate(buildLogMessage(operationTitle, 'Warning', additionalData));
+    logUpdate.done();
+};
+
+export const info = (operationTitle: string, additionalData?: string) => {
+    logUpdate(buildLogMessage(operationTitle, 'Info', additionalData));
+    logUpdate.done();
+};
+
+export const stopLogUpdate = (operationTitle: string, messageType: LogMessageType, additionalData?: string) => {
+    logUpdateActive = false;
+    log(operationTitle, messageType, additionalData);
 };
 
 export const performOsTask = async (command: string, args: string[], taskTitle: string, options?: childProcess.SpawnOptionsWithoutStdio,
@@ -63,10 +122,10 @@ export const performOsTask = async (command: string, args: string[], taskTitle: 
             additionalData = await onSuccess(resultString);
         }
         if (additionalData instanceof Error) {
-            stopLogUpdate(taskTitle, false, additionalData.message);
+            stopLogUpdate(taskTitle, 'Error', additionalData.message);
             throw additionalData;
         } else {
-            stopLogUpdate(taskTitle, true, additionalData);
+            stopLogUpdate(taskTitle, 'Success', additionalData);
         }
     });
 
@@ -80,12 +139,12 @@ export const performOsTask = async (command: string, args: string[], taskTitle: 
         // TODO: filter stderr output
         const errorMessage = textDecoder.decode(data);
         if (!onError) {
-            stopLogUpdate(taskTitle, false, errorMessage);
+            stopLogUpdate(taskTitle, 'Error', errorMessage);
             throw Error(errorMessage);
         } else {
             additionalData = await onError(errorMessage);
             if (additionalData) {
-                stopLogUpdate(taskTitle, false, additionalData);
+                stopLogUpdate(taskTitle, 'Error', additionalData);
             }
         }
     });

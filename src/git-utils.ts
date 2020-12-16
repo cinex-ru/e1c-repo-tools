@@ -1,30 +1,39 @@
+import path from 'path';
+import { cwd } from 'process';
 import { performOsTask } from './console-operations';
 
 const gitErrorCallback = async (result: string) => {
     const errorMessage = result.split('\n')
         .map((str) => str.trim())
         .filter((str) => str.length > 0)[0];
-    // throw Error(errorMessage);
     return errorMessage;
 };
 
-export const getStagedFiles = async (workingDir: string = ''): Promise<string[]> => {
-    const spawnOptions = workingDir.length === 0 ? undefined : { 'cwd': workingDir };
+export const revParse = async (revision: string = 'HEAD', workDir: string = ''): Promise<string> => {
+    const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
 
-    let against = '';
-    await performOsTask('git', ['rev-parse', '--verify', 'HEAD'], 'Git: rev-parse', spawnOptions,
+    let hash = '';
+    await performOsTask('git', ['rev-parse', '--verify', revision], 'Git: rev-parse', spawnOptions,
         async (result: string) => {
-            against = result.split('\n')
+            hash = result.split('\n')
                 .map((str) => str.trim())
                 .filter((str) => str.length > 0)
                 .pop() || '';
-            return against;
+            return hash;
         },
         gitErrorCallback);
 
+    return hash;
+};
+
+export const getStagedFiles = async (workDir: string = ''): Promise<string[]> => {
+    const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
+
+    const hash = await revParse();
+
     const diffParams = ['--cached', '--name-only', '--diff-filter=AM'];
-    if (against) {
-        diffParams.push(against);
+    if (hash) {
+        diffParams.push(hash);
     }
 
     let files: string[] = [];
@@ -40,10 +49,28 @@ export const getStagedFiles = async (workingDir: string = ''): Promise<string[]>
     return files;
 };
 
-export const stageFolder = async (pathToFolder: string, workingDir: string = '') => {
-    const spawnOptions = workingDir.length === 0 ? undefined : { 'cwd': workingDir };
+export const stageDir = async (pathToDir: string, workDir: string = '') => {
+    const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
+    const relPathToDir = path.relative(workDir.length === 0 ? cwd() : workDir, pathToDir);
 
-    await performOsTask('git', ['add', pathToFolder], 'Git: add new files', spawnOptions,
+    await performOsTask('git', ['add', pathToDir], `Git: add new files '${relPathToDir}'`, spawnOptions,
         undefined,
         gitErrorCallback);
+};
+
+export const getDirStatus = async (pathToDir: string, workDir: string = ''): Promise<string[]> => {
+    const spawnOptions = workDir.length === 0 ? undefined : { 'cwd': workDir };
+    const relPathToDir = path.relative(workDir.length === 0 ? cwd() : workDir, pathToDir);
+
+    let files: string[] = [];
+    await performOsTask('git', ['status', '--porcelain', '-uall', pathToDir], `Git: status '${relPathToDir}'`, spawnOptions,
+        async (result: string) => {
+            files = result.split('\n')
+                .map((str) => str.trim())
+                .filter((str) => str.length > 0);
+            return files.length.toString();
+        },
+        gitErrorCallback);
+
+    return files;
 };

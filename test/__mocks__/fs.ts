@@ -18,4 +18,5 @@ export const promises = {
         }
         throw new Error(`Error no file ${filename}`);
     }),
+    'rmdir': jest.fn(),
 };
