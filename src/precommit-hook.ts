@@ -7,13 +7,20 @@ export const getStagedFilesToProcess = async (filesExtensions: string[], pathToD
 
 export const processStagedFiles = async (e1cDispatcher?: E1cDispatcher): Promise<DumpedFileInfo[]> => {
     const dispatcher = e1cDispatcher || await E1cDispatcher.initWithLocalConfig();
-    const dumpedFilesInfo = await getStagedFilesToProcess(dispatcher.filesExtensions, dispatcher.pathToDistDir)
-        .then((filepaths) => filepaths.map((filepath) => dispatcher.DumpExternalBinFile(filepath)));
-    return Promise.all(dumpedFilesInfo);
+    const filesToDump = await getStagedFilesToProcess(dispatcher.filesExtensions, dispatcher.pathToDistDir);
+    const dumpedFilesInfo: DumpedFileInfo[] = [];
+    for (let i = 0; i < filesToDump.length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        dumpedFilesInfo.push(await dispatcher.DumpExternalBinFile(filesToDump[i]));
+    }
+    return dumpedFilesInfo;
 };
 
 export const precommitHook = async () => {
     const dispatcher = await E1cDispatcher.initWithLocalConfig();
     const dumpedFilesInfo = await processStagedFiles(dispatcher);
-    Promise.all(dumpedFilesInfo.map((dumpedFileInfo) => stageDir(dumpedFileInfo.pathToSrcFiles)));
+    for (let i = 0; i < dumpedFilesInfo.length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await stageDir(dumpedFilesInfo[i].pathToSrcFiles);
+    }
 };

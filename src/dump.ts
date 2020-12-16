@@ -8,20 +8,28 @@ export const getChangedFilesToProcess = async (
     filesExtensions: string[],
     pathToDistDir: string,
 ): Promise<string[]> => (await getDirStatus(pathToDistDir))
-    .map((str) => str.split(' ')).filter((str) => str.length > 0).splice(-1)[0]
+    .map((str) => str.split(' ')).map((arr) => arr.filter((str) => str.length > 0).splice(-1)[0])
     .filter((filepath) => filesExtensions.map((s) => `.${s}`).indexOf(filepath.slice(-4)) >= 0);
 
+// TODO: remove duplicated code ./src/precommit-hook.ts
 export const processChangedFiles = async (e1cDispatcher?: E1cDispatcher): Promise<DumpedFileInfo[]> => {
     const dispatcher = e1cDispatcher || await E1cDispatcher.initWithLocalConfig();
-    const dumpedFilesInfo = await getChangedFilesToProcess(dispatcher.filesExtensions, dispatcher.pathToDistDir)
-        .then((filepaths) => filepaths.map((filepath) => dispatcher.DumpExternalBinFile(filepath)));
-    return Promise.all(dumpedFilesInfo);
+    const filesToDump = await getChangedFilesToProcess(dispatcher.filesExtensions, dispatcher.pathToDistDir);
+    const dumpedFilesInfo: DumpedFileInfo[] = [];
+    for (let i = 0; i < filesToDump.length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        dumpedFilesInfo.push(await dispatcher.DumpExternalBinFile(filesToDump[i]));
+    }
+    return dumpedFilesInfo;
 };
 
 const main = async () => {
     const dispatcher = await E1cDispatcher.initWithLocalConfig();
     const dumpedFilesInfo = await processChangedFiles(dispatcher);
-    Promise.all(dumpedFilesInfo.map((dumpedFileInfo) => stageDir(dumpedFileInfo.pathToSrcFiles)));
+    for (let i = 0; i < dumpedFilesInfo.length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await stageDir(dumpedFilesInfo[i].pathToSrcFiles);
+    }
 };
 
 switchLogUpdateOn();
