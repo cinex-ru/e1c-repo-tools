@@ -31,7 +31,8 @@
     },
     "bin": {
         "e1c-precommit-hook": "./dist/hook.js",
-        "e1c-dump": "./dist/dump.js"
+        "e1c-dump": "./dist/dump.js",
+        "e1c-build": "./dist/build.js"
     },
     "scripts": {
         "prepublishOnly": "yarn build",
