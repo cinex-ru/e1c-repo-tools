@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.2.0...v0.2.1) (2020-12-23)
+
+
+### Bug Fixes
+
+* add declarations to dist ([27bf042](https://github.com/cinex-ru/e1c-repo-tools/commit/27bf042878ac236ed6a5b2b3bc40c512d5839255))
+
+
+### Others
+
+* bump minor version ([69a5655](https://github.com/cinex-ru/e1c-repo-tools/commit/69a5655e4b20793bc143e9c417bb6d91c7433e47))
+
 ## [0.2.0](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.1.1...v0.2.0) (2020-12-16)
 
 
