@@ -1,5 +1,7 @@
 # 1C enterprise repository tools
 
+Tools for 1C enterprise repository
+
 [Русская версия](https://github.com/cinex-ru/e1c-repo-tools/blob/master/README.md)
 
 ## Installation
@@ -31,3 +33,13 @@ There are currently three cli utils:
 - `e1c-dump` - dump external reports/processors into the source files based on the settings in `package.json`. If the directory, where the unloading is performed, contains changes, then before deleting a backup copy of it is created
 - `e1c-build` - build source files into external reports/processors based on the settings in `package.json`. If a file with the corresponding name exists and contains changes, it is backed up
 - `e1c-precommit-hook` - script, to be used as a git-hook. It works similarly to `e1c-dump`, but only staged files are used to dump them. It also adds the source files to the current commit after they have been staged
+  
+  Simply install [husky](https://www.npmjs.com/package/husky) and add to your `package.json`
+  
+  ``` json
+  "husky": {
+      "hooks": {
+        "pre-commit": "yarn e1c-precommit-hook" // or `npx e1c-precommit-hook`
+      }
+  }
+  ```
