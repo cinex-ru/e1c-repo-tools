@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.2.1...v0.2.2) (2020-12-24)
+
+
+### Docs
+
+* correct readme ([0b4f2a4](https://github.com/cinex-ru/e1c-repo-tools/commit/0b4f2a4c3783039618d32769950d8b6a79828eb5))
+
 ### [0.2.1](https://github.com/cinex-ru/e1c-repo-tools/compare/v0.2.0...v0.2.1) (2020-12-23)
 
 
